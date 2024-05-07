@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from "react";
 import Card from "./Card";
 import axios from "axios";
+import "./Deck.css";
 
 const API_BASE_URL = "http://deckofcardsapi.com/api/deck";
 
 function Deck() {
   const [deck, setDeck] = useState(null);
   const [drawn, setDrawn] = useState([]);
-  const [autoDraw, setAutoDraw] = useState(false);
+  const [isShuffling, setIsShuffling] = useState(false);
 
-  useEffect(() => {
+  useEffect(function loadDeckFromAPI() {
     async function getDeck() {
       let d = await axios.get(`${API_BASE_URL}/new/shuffle/`);
       setDeck(d.data);
@@ -17,54 +18,73 @@ function Deck() {
     getDeck();
   }, []);
 
-
-
-function drawButton() {
+  // function to draw a card from the deck.  An error will result if the deck is empty.
   async function drawCard() {
-    let { deck_id } = deck;
     try {
-      let cardRes = await axios.get(`${API_BASE_URL}/${deck_id}/draw/`);
-      if (cardRes.data.remaining === 0) {
-        setAutoDraw(false);
-        throw new Error("no cards remaining!");
-      }
+      let cardRes = await axios.get(`${API_BASE_URL}/${deck.deck_id}/draw/`);
+      if (cardRes.data.remaining === 0) throw new Error("no cards remaining!");
       const card = cardRes.data.cards[0];
-      setDrawn(d => [
+      setDrawn((d) => [
         ...d,
         {
           id: card.code,
           name: card.suit + " " + card.value,
-          image: card.image
-        }
+          image: card.image,
+        },
       ]);
     } catch (err) {
       alert(err);
     }
   }
-  drawCard();
 
-function shuffleButton() {
-  setDeck(null);
-  setDrawn([]);
-  setAutoDraw(false);
-  getDeck();
+  //function to shuffle the deck
+  async function shuffleDeck() {
+    setIsShuffling(true);
+    try {
+      await axios.get(`${API_BASE_URL}/${deck.deck_id}/shuffle/`);
+      setDrawn([]);
+    } catch (err) {
+      alert(err);
+    } finally {
+      setIsShuffling(false);
+    }
+  }
 
+  //show the draw button if necessary
+  function renderDrawBtnIfOk() {
+    if (!deck) return null;
 
-return (
-  <div>
-    {deck ? (
-      <button onClick={drawButton}>Draw Card!</button>
-    ) : (
-      <button onClick={shuffleButton}>Shuffle Deck!</button>
-    )}
-    <div>
-      {drawn.map(c => (
-        <Card key={c.id} name={c.name} image={c.image} />
-      ))}
-    </div>
-  </div>
-);
+    return (
+      <button className="Deck-btn" onClick={drawCard}>
+        Draw a card
+      </button>
+    );
+  }
 
-}}}
+  //show the shuffle button if necessary
+  function renderShuffleBtnIfOk() {
+    if (!deck) return null;
+    return (
+      <button className="Deck-btn" onClick={shuffleDeck} disabled={isShuffling}>
+        Shuffle Deck
+      </button>
+    );
+  }
+
+  // Display page layout
+  return (
+    <main className="Deck">
+      <h1 className="Deck-title">♦ Card Dealer ♦</h1>
+      <div className="Deck-buttons">
+        {renderDrawBtnIfOk()} {renderShuffleBtnIfOk()}
+      </div>
+      <div className="Deck-cardarea">
+        {drawn.map((c) => (
+          <Card key={c.id} name={c.name} image={c.image} />
+        ))}
+      </div>
+    </main>
+  );
+}
 
 export default Deck;

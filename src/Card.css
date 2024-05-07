@@ -1,0 +1,17 @@
+.Deck-cardarea {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-around;
+  align-items: random;
+  margin-top: 20px;
+}
+
+img.Card {
+  width: 130px;
+  height: 195px;
+  margin: 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+}
